@@ -116,7 +116,7 @@ class Client:
                 arrow.get(self.session["last_updated"]).shift(
                     seconds=int(self.config["update_interval"])
                 )
-                < arrow.utcnow()
+                > arrow.utcnow()
             ):
                 return self.session
 
