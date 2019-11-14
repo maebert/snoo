@@ -1,4 +1,4 @@
-from src.snoo.client import Client
+from snoo.client import Client
 
 
 def test_client():
