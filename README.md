@@ -2,7 +2,11 @@
 
 This is an API client to the [SNOO Smart Bassinet](https://www.happiestbaby.com/products/snoo-smart-bassinet). The SNOO is a bassinet that will rock your baby to sleep, and responds to the baby by trying to sooth it with different rocking motions and sounds when it detects crying.
 
-Currently, it supports getting the current session data from SNOO, and historic data.
+Currently, it supports getting the current session data from SNOO, and historic data. It does not allow you to control the SNOO (the control API is provided by [PubNub](https://www.pubnub.com) and is different from the read-only data API hosted by happiestbaby.com)
+
+# A word of caution
+
+The SNOO API is undocumented. Using it might or might not violate Happiest Baby, Inc [Terms of Service](https://www.happiestbaby.com/pages/terms-of-service). Use at your own risk.
 
 # Usage
 
