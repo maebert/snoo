@@ -22,6 +22,7 @@ To get the status of your snoo, simply run
 
 ```
 $ snoo
+Soothing 26m
 ```
 
 The first time you run it, it will prompt for your username and password. These will be stored in either `~/.snoo_config` or `~/.config/snoo/snoo.config`, depending on your system. The output of the `snoo` command is the status (`Awake`, `Asleep`, or `Soothing`), and the duration of the current session.
