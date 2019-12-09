@@ -13,6 +13,116 @@ class APIError(Exception):
         self.response = response
 
 
+class Session:
+    _map = {}
+
+    def __init__(self, id):
+        self.id = id
+        self.levels = []
+
+    @property
+    def start_time(self):
+        if not self.levels:
+            return None
+        return min([level["startTime"] for level in self.levels])
+
+    @property
+    def duration(self):
+        if not self.levels:
+            return 0
+        return sum([level["stateDuration"] for level in self.levels])
+
+    @property
+    def asleep_duration(self):
+        if not self.levels:
+            return 0
+        return sum(
+            [
+                level["stateDuration"]
+                for level in self.levels
+                if level["type"] == "asleep"
+            ]
+        )
+
+    @property
+    def soothing_duration(self):
+        if not self.levels:
+            return 0
+        return sum(
+            [
+                level["stateDuration"]
+                for level in self.levels
+                if level["type"] == "soothing"
+            ]
+        )
+
+    @property
+    def end_time(self):
+        return self.start_time.shift(seconds=self.duration)
+
+    def __repr__(self):
+        return f"<{self.start_time:MMM D, HH:mm} - {self.end_time:HH:mm}>"
+
+    @classmethod
+    def _from_data(cls, sessionId, **kwargs):
+        if sessionId not in cls._map:
+            cls._map[sessionId] = Session(sessionId)
+        if "startTime" in kwargs:
+            kwargs["startTime"] = arrow.get(kwargs["startTime"])
+        cls._map[sessionId].levels.append(kwargs)
+        return cls._map[sessionId]
+
+    def to_dict(self):
+        return {
+            "start_time": self.start_time.format("YYYY-MM-DDTHH:mm:ss"),
+            "end_time": self.end_time.format("YYYY-MM-DDTHH:mm:ss"),
+            "duration": self.duration,
+            "asleep": self.asleep_duration,
+            "soothing": self.soothing_duration,
+        }
+
+    @classmethod
+    def export(cls):
+        result = []
+        for session in sorted(cls._map.values(), key=lambda s: s.start_time):
+            result.append(session.to_dict())
+        return result
+
+
+class Day:
+    _all = []
+
+    def __init__(self, start_time):
+        self.start_time = start_time
+        self.sessions = []
+        self.data = {}
+
+    def __repr__(self):
+        return f"<{self.start_time:MMM D} ({len(self.sessions)} sessions)>"
+
+    @classmethod
+    def _from_data(cls, start_time, data):
+        day = cls(start_time)
+        day.sessions = set(
+            [Session._from_data(**level) for level in data.pop("levels")]
+        )
+        day.data = data
+        cls._all.append(day)
+        return day
+
+    def to_dict(self):
+        result = {"date": self.start_time.format("YYYY-MM-DD")}
+        result.update(self.data)
+        return result
+
+    @classmethod
+    def export(cls):
+        result = []
+        for day in sorted(cls._all, key=lambda d: d.start_time):
+            result.append(day.to_dict())
+        return result
+
+
 class Client:
     USER_AGENT = "SNOO/351 CFNetwork/1121.2 Darwin/19.2.0"
     BASE_URL = "https://snoo-api.happiestbaby.com"
@@ -69,12 +179,18 @@ class Client:
             )
         return self._config_path
 
-    def request(self, endpoint, payload=None, method="get", use_token=True):
+    def request(
+        self, endpoint, payload=None, params=None, method="get", use_token=True
+    ):
         headers = {"User-Agent": self.USER_AGENT}
         if use_token:
             headers["Authorization"] = f"Bearer {self.get_token()}"
         response = requests.request(
-            method=method, url=self.BASE_URL + endpoint, json=payload, headers=headers,
+            method=method,
+            url=self.BASE_URL + endpoint,
+            json=payload,
+            params=params,
+            headers=headers,
         )
         if response.ok:
             return response.json()
@@ -110,6 +226,33 @@ class Client:
         self.save()
         return self.auth["token"]
 
+    def get_history(self, start_time, end_time):
+        result = []
+        for day in arrow.Arrow.range("day", start_time, end_time):
+            data = self.request(
+                self.DATA_ENDPOINT,
+                method="get",
+                params={"startTime": day.format("MM/DD/YYYY hh:mm:ss")},
+            )
+            result.append(Day._from_data(start_time, data))
+        return result
+
+    def export_sessions(self, start_time, end_time):
+        self.get_history(start_time, end_time)
+        return Client._dict_to_csv(Session.export())
+
+    def export_stats(self, start_time, end_time):
+        self.get_history(start_time, end_time)
+        return Client._dict_to_csv(Day.export())
+
+    @classmethod
+    def _dict_to_csv(cls, rows):
+        fields = rows[0].keys()
+        result = ",".join(fields) + "\n"
+        for row in rows:
+            result += ",".join([str(row[f]) for f in fields]) + "\n"
+        return result
+
     def get_current_session(self):
         if self.session["last_updated"]:
             if (
@@ -138,7 +281,8 @@ class Client:
         self.save()
         return self.session
 
-    def _humanize(self, duration):
+    @classmethod
+    def _humanize(cls, duration):
         if not duration:
             return "0m"
         if isinstance(duration, str):
@@ -158,4 +302,4 @@ class Client:
             status = "Asleep"
         else:
             status = "Soothing"
-        return f"{status} {self._humanize(session['duration'])}"
+        return f"{status} {Client._humanize(session['duration'])}"

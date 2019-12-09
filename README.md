@@ -21,11 +21,41 @@ pip install snoo
 To get the status of your snoo, simply run
 
 ```
-$ snoo
+$ snoo status
 Soothing 26m
 ```
 
 The first time you run it, it will prompt for your username and password. These will be stored in either `~/.snoo_config` or `~/.config/snoo/snoo.config`, depending on your system. The output of the `snoo` command is the status (`Awake`, `Asleep`, or `Soothing`), and the duration of the current session.
+
+## Exporting data
+
+To export data of each individual session, use
+
+```
+$ snoo sessions --start DATE --end DATE
+```
+
+where `DATE` follows the format `2019-12-03`. By default, `--start` and `--end` correspond to yesterday and today, respectively.
+
+The result is a CSV formatted list of sessions in the snoo, eg.
+
+```csv
+start_time,end_time,duration,asleep,soothing
+2019-12-03T12:35:11,2019-12-03T13:59:04,5033,4218,815
+2019-12-03T15:28:13,2019-12-03T15:28:41,28,17,11
+...
+```
+
+where `duration`, `asleep`, and `soothing` are durations given in _seconds_.
+
+Alternatively, you can get aggregated information about each day using `snoo days`:
+
+```csv
+date,naps,longestSleep,totalSleep,daySleep,nightSleep,nightWakings,timezone
+2019-12-03,6,12933,58035,25038,32997,4,None
+```
+
+Again, all durations are given in seconds. How `daySleep` and `nightSleep` are defined is set in your Snoo app.
 
 ## Programmatic usage
 
