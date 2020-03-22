@@ -234,7 +234,7 @@ class Client:
                 method="get",
                 params={"startTime": day.format("MM/DD/YYYY hh:mm:ss")},
             )
-            result.append(Day._from_data(start_time, data))
+            result.append(Day._from_data(day, data))
         return result
 
     def export_sessions(self, start_time, end_time):
