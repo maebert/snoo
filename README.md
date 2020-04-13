@@ -1,5 +1,7 @@
 # SNOO
 
+![PyPI](https://img.shields.io/pypi/v/snoo?style=for-the-badge) ![GitHub last commit](https://img.shields.io/github/last-commit/maebert/snoo?style=for-the-badge)
+
 This is an API client to the [SNOO Smart Bassinet](https://www.happiestbaby.com/products/snoo-smart-bassinet). The SNOO is a bassinet that will rock your baby to sleep, and responds to the baby by trying to sooth it with different rocking motions and sounds when it detects crying.
 
 Currently, it supports getting the current session data from SNOO, and historic data. It does not allow you to control the SNOO (the control API is provided by [PubNub](https://www.pubnub.com) and is different from the read-only data API hosted by happiestbaby.com)
