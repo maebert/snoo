@@ -298,7 +298,7 @@ class Client:
         status = ""
         if session["end_time"]:
             status = "Awake"
-        elif session["level"] == "BASELINE":
+        elif session["level"] in ["BASELINE", "WEANING_BASELINE"]:
             status = "Asleep"
         else:
             status = "Soothing"
